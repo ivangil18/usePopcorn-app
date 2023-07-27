@@ -52,6 +52,7 @@ const average = (arr) =>
 
 export default function App() {
   const [movies, setMovies] = useState(tempMovieData);
+  const [watched, setWatched] = useState(tempWatchedData);
   return (
     <>
       <NavBar>
@@ -59,10 +60,13 @@ export default function App() {
         <NumResults movies={movies} />
       </NavBar>
       <Main>
-        <ListBox>
+        <Box>
           <MovieList movies={movies} />
-        </ListBox>
-        <WatchedBox />
+        </Box>
+        <Box>
+          <WatchedSummary watched={watched} />
+          <WatchedMovieList watched={watched} />
+        </Box>
       </Main>
     </>
   );
@@ -111,15 +115,14 @@ function Main({ children }) {
   return <main className="main">{children}</main>;
 }
 
-function ListBox({ children }) {
-  const [isOpen1, setIsOpen1] = useState(true);
-  function handleToggle() {
-    setIsOpen1((open) => !open);
-  }
+function Box({ children }) {
+  const [isOpen, setIsOpen] = useState(true);
   return (
     <div className="box">
-      <Button onClick={handleToggle}>{isOpen1 ? "–" : "+"}</Button>
-      {isOpen1 && children}
+      <button className="btn-toggle" onClick={() => setIsOpen(!isOpen)}>
+        {isOpen ? "–" : "+"}
+      </button>
+      {isOpen && children}
     </div>
   );
 }
@@ -146,27 +149,6 @@ function Movie({ movie }) {
         </p>
       </div>
     </li>
-  );
-}
-
-function WatchedBox() {
-  const [watched, setWatched] = useState(tempWatchedData);
-
-  const [isOpen2, setIsOpen2] = useState(true);
-
-  function handleToggle() {
-    setIsOpen2((open) => !open);
-  }
-  return (
-    <div className="box">
-      <Button onClick={handleToggle}>{isOpen2 ? "–" : "+"}</Button>
-      {isOpen2 && (
-        <>
-          <WatchedSummary watched={watched} />
-          <WatchedMovieList watched={watched} />
-        </>
-      )}
-    </div>
   );
 }
 
@@ -230,13 +212,5 @@ function WatchedSummary({ watched }) {
         </p>
       </div>
     </div>
-  );
-}
-
-function Button({ onClick, children }) {
-  return (
-    <button className="btn-toggle" onClick={onClick}>
-      {children}
-    </button>
   );
 }
