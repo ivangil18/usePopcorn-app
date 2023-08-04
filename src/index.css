@@ -54,8 +54,20 @@ body {
   max-width: 42rem;
   background-color: var(--color-background-500);
   border-radius: 0.9rem;
-  /* overflow: scroll; */
+  overflow: scroll;
+
   position: relative;
+}
+
+/* This will hide the scroll bars but keep the scrolling functionality for Chrome, Safary and Opera */
+.box::-webkit-scrollbar {
+  display: none;
+}
+
+/* This will hide the scroll bars but keep the scrolling functionality for IE, Edge and Firefox */
+.box {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
 }
 
 .loader {
