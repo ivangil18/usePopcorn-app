@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { imbdKey } from "./env.prop";
+
 import StarRating from "./StarRating";
+import { useMovies } from "./useMovies";
+import { imbdKey } from "./env.prop";
 
 const average = (arr) =>
   arr.reduce((acc, cur, i, arr) => acc + cur / arr.length, 0);
@@ -8,11 +10,10 @@ const average = (arr) =>
 const KEY = imbdKey;
 
 export default function App() {
-  const [movies, setMovies] = useState([]);
   const [query, setQuery] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
   const [selectedId, setSelectedId] = useState(null);
+
+  const { movies, isLoading, error } = useMovies(query);
 
   const [watched, setWatched] = useState(function () {
     return JSON.parse(localStorage.getItem("watched"));
@@ -42,57 +43,6 @@ export default function App() {
   );
 
   // ASYNCHRONOUSLLY FETCHING FUNCTION with ERROR HANDLING
-  useEffect(
-    function () {
-      //BROWSER API
-      const controller = new AbortController();
-
-      async function fetchMovies() {
-        try {
-          setIsLoading(true);
-          setError("");
-          const res = await fetch(
-            `http://www.omdbapi.com/?apikey=${KEY}&s=${query}`,
-            { signal: controller.signal } //This object has to be added to the fetch for the abort() to work
-          );
-
-          if (!res.ok) {
-            throw new Error(
-              "Something went wrong fetching movies, please check your internet conexion"
-            );
-          }
-          const data = await res.json();
-          if (data.Response === "False") {
-            throw new Error("Movie not found");
-          }
-
-          setMovies(data.Search);
-          setIsLoading(false);
-          setError("");
-        } catch (err) {
-          if (err.name !== "AbortError") {
-            setError(err.message);
-          }
-        } finally {
-          setIsLoading(false);
-        }
-      }
-
-      if (query.length < 3) {
-        setMovies([]);
-        setError("");
-        return;
-      }
-      handleCloseMovie();
-      fetchMovies();
-
-      //CLEANUP FUNCTION
-      return function () {
-        controller.abort();
-      };
-    },
-    [query]
-  );
 
   return (
     <>
@@ -141,6 +91,12 @@ function MovieDetails({
   const [isLoading, setIsLoading] = useState(false);
   const [userRating, setUserRating] = useState("");
 
+  const countRef = useRef(0);
+
+  useEffect(() => {
+    if (userRating) countRef.current++;
+  }, [userRating]);
+
   const isWatched = watched.map((movie) => movie.imdbID).includes(selectedId);
 
   const watchedUserRating = watched.find(
@@ -155,6 +111,7 @@ function MovieDetails({
       imdbRating: imdbRating,
       userRating: Number(userRating),
       runtime: Number(runtime.split(" ").at(0)),
+      userRatingDecisionCount: countRef.current,
     };
 
     onAddWatchedMovie(watchedMovie);
@@ -313,20 +270,23 @@ function Search({ query, setQuery }) {
   //THIS IS THE CORRECT WAY TO ACCESS DOM ELEMENTS FROM REACT USING REFS
   const inputEl = useRef(null);
 
-  useEffect(function () {
-    function callBack(e) {
-      if (document.activeElement === inputEl.current) return;
+  useEffect(
+    function () {
+      function callBack(e) {
+        if (document.activeElement === inputEl.current) return;
 
-      if (e.code === "Enter") {
-        inputEl.current.focus();
-        setQuery("");
+        if (e.code === "Enter") {
+          inputEl.current.focus();
+          setQuery("");
+        }
       }
-    }
 
-    document.addEventListener("keydown", callBack);
+      document.addEventListener("keydown", callBack);
 
-    return () => document.removeEventListener("keydown", callBack);
-  }, []);
+      return () => document.removeEventListener("keydown", callBack);
+    },
+    [setQuery]
+  );
 
   // THIS IS NOT THE CORRECT WAY TO ACCESS DOM ELEMENTS IN REACT BECAUSE THIS IS AN IMPERATIVE WAY - NOT DECLARATIVE AND DEPENDENS ON A CLASS ATTRIBUTE
   // useEffect(function () {
